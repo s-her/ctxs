@@ -1,0 +1,52 @@
+OUTPUT_FORMAT("elf32-littlearm")
+OUTPUT_ARCH(arm)
+ENTRY(start)
+
+MEMORY
+{
+  VECTORS (RWX) : ORIGIN = 0x00000000, LENGTH = 128
+  RAM (RWX)     : ORIGIN = 0x00010000, LENGTH = 15M
+}
+
+SECTIONS
+{
+    /* Codigo ejecutable */
+    .text : ALIGN(4)
+    {
+        *(.text.start)
+        *(.text*)
+        . = ALIGN(4);
+    } >RAM
+
+    /* Vectores de arranque, relocalizados al inicio */
+    .vectors : ALIGN(4)
+    {
+        _vectors_lma = LOADADDR(.vectors);
+        _vectors_s = ABSOLUTE(.);
+        KEEP(*(.vectors))
+        . = ALIGN(4);
+        _vectors_e = ABSOLUTE(.);
+        _vectors_l = _vectors_e - _vectors_s;
+    } >VECTORS AT>RAM
+
+    /* Datos no ejecutables */
+    .data : ALIGN(4)
+    {
+        *(.data*)
+        *(.rodata*)
+        . = ALIGN(4);
+    } >RAM
+
+    .bss (NOLOAD) : ALIGN(4)
+    {
+        _bss_s = ABSOLUTE(.);
+        *(.bss*)
+        . = ALIGN(4);
+        _bss_e = ABSOLUTE(.);
+        _bss_l = _bss_e - _bss_s;
+    } >RAM
+
+    . = ALIGN(16);
+
+    _stack_top = ORIGIN(RAM) + LENGTH(RAM);
+}
